@@ -2,6 +2,8 @@ Proton - Contributing on Drug Happlotype Catalog Annotations. (4 September 2019)
 =============================================================================
 Hi, Proton we can do these!. this spell might cheer you up! Expecto Platonum! :))
 
+git fetch origin
+git checkout pgx_support origin/pgx_support
 
 GEMINI - integrative exploration of genetic variation and genome annotations.
 =============================================================================
