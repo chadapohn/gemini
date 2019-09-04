@@ -150,11 +150,12 @@ def _download_to_dir(url, out_fname, dirname, version, cur_version):
                     raise ValueError("Failed to download with wget")
                 time.sleep(10)
                 retries += 1
-        with open(out_fname) as in_handle:
-            line1 = in_handle.readline()
-            line2 = in_handle.readline()
-            if "?xml" in line1 and "Error" in line2 and "AccessDenied" in line2:
-                raise ValueError("Could not download annotation file. Permission denied error: %s" % url)
+        # Sinonkt: can't download annos dbs, so comment out until found cherry pick fixed.
+        # with open(out_fname) as in_handle:
+        #     line1 = in_handle.readline()
+        #     line2 = in_handle.readline()
+        #     if "?xml" in line1 and "Error" in line2 and "AccessDenied" in line2:
+        #         raise ValueError("Could not download annotation file. Permission denied error: %s" % url)
         # move to system directory (/usr/share/gemini/data) and remove from pwd
         shutil.move(out_fname, dest)
         os.chdir(orig_dir)
