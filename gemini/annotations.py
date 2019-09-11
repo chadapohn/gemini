@@ -773,6 +773,9 @@ def get_gnomad_info(var, empty=GNOMAD_EMPTY):
         # var.start is used since the chromosomal pos in pysam.asVCF is zero based (hit.pos)
         # and would be equivalent to (POS-1) i.e var.start
         # TODO: change to REF
+        if not var.ALT or len(var.ALT) == 0:
+            continue
+
         if var.start != hit.start or var.REF != hit.REF or var.ALT[0] != hit.ALT[0]:
             continue
 
@@ -830,6 +833,9 @@ def get_exac_info(var, empty=EXAC_EMPTY):
         # Does not handle anything beyond var.ALT[0] in the VCF (in case of multi-allelic variants)
         # var.start is used since the chromosomal pos in pysam.asVCF is zero based (hit.pos)
         # and would be equivalent to (POS-1) i.e var.start
+        if not var.ALT or len(var.ALT) == 0:
+            continue
+
         if not (var.start == hit.pos and var.REF == hit.ref):
             continue
 
