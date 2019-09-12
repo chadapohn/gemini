@@ -683,6 +683,9 @@ def get_esp_info(var):
     info_map = {}
     acs = {}
     for hit in annotations_in_vcf(var, "esp", "vcf", "grch37"):
+        if not var.ALT or len(var.ALT) == 0:
+            continue
+            
         if hit.contig not in ['Y']:
             fetched.append(hit)
             # We need a single ESP entry for a variant
