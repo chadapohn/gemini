@@ -761,6 +761,7 @@ def get_geno2mp_ct(var):
     for hit in annotations_in_vcf(var, "geno2mp", "vcf", "grch37"):
         if not (var.start == hit.pos and var.REF == hit.ref):
             continue
+        if not var.ALT or len(var.ALT) == 0: continue
         if not var.ALT[0] in hit.alt.split(","): continue
 
         ct = next(x for x in hit.info.split(";") if x.startswith("HPO_CT="))
