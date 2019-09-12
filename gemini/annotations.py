@@ -341,6 +341,9 @@ def _get_cadd_scores(var, labels, hit):
     """
     get cadd scores
     """
+    if not var.ALT or len(var.ALT) == 0:
+        return None, None
+
     raw = hit[3].split(",")
     scaled = hit[4].split(",")
 
