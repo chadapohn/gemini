@@ -331,10 +331,12 @@ def _get_var_ref_and_alt(var):
                 ref = var.ref
                 alt = var.alt
 
-    if isinstance(alt, basestring) and len(alt) > 0:
+    if isinstance(alt, basestring):
         alt = alt.split(",")
     elif isinstance(alt, (tuple, list)):
         alt = [x for x in alt if x]
+    elseif alt == "":
+        alt = []
     return ref, alt
 
 def _get_cadd_scores(var, labels, hit):
