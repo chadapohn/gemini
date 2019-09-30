@@ -335,7 +335,7 @@ def _get_var_ref_and_alt(var):
         alt = alt.split(",")
     elif isinstance(alt, (tuple, list)):
         alt = [x for x in alt if x]
-    elseif alt == "":
+    elif alt == "":
         alt = []
     return ref, alt
 
