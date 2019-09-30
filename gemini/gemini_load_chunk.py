@@ -425,7 +425,7 @@ class GeminiLoader(object):
             fitcons = annotations.get_fitcons(var)
             Exac = annotations.get_exac_info(var)
             gnomad = annotations.get_gnomad_info(var)
-            pharmgkb_info = annotations.get_pharmgkb_info(var)
+
             #load CADD scores by default
             if self.args.skip_cadd is False:
                 (cadd_raw, cadd_scaled) = annotations.get_cadd_scores(var)
@@ -451,7 +451,6 @@ class GeminiLoader(object):
             thousandG = annotations.EMPTY_1000G
             Exac = annotations.EXAC_EMPTY
             gnomad = annotations.GNOMAD_EMPTY
-            pharmgkb_info = annotations.PharmGKBInfo()
             recomb_rate = None
             gms = annotations.GmsTechs(None, None, None)
             grc = None
@@ -696,9 +695,7 @@ class GeminiLoader(object):
                    gnomad_num_hom_alt=gnomad.num_hom_alt,
                    gnomad_num_chroms=gnomad.num_chroms,
 
-                   pharmgkb_gene=pharmgkb_info.gene,
-                   pharmgkb_ref_star_alleles=pharmgkb_info.ref_star_alleles,
-                   pharmgkb_alt_star_alleles=pharmgkb_info.alt_star_alleles,
+
                    )
         if not self.args.skip_pls:
            variant['gt_phred_ll_homref'] = pack_blob(gt_phred_ll_homref)

@@ -278,10 +278,6 @@ def create_tables(path, effect_fields=None, pls=True):
     gnomad_num_het int,
     gnomad_num_hom_alt int,
     gnomad_num_chroms int,
-
-    pharmgkb_gene varchar(60),
-    pharmgkb_ref_star_alleles text,
-    pharmgkb_alt_star_alleles text,
     %s""" % (pls, effect_string.rstrip(",")),
 
     variant_impacts="""

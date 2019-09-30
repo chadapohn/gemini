@@ -56,7 +56,6 @@ def get_anno_files(args):
      'exac': os.path.join(anno_dirname, 'ExAC.r0.3.sites.vep.tidy.vcf.gz'),
      'gnomad': os.path.join(anno_dirname, 'gnomad.exomes.r2.1.tidy.bcf'),
      'geno2mp': os.path.join(anno_dirname, 'geno2mp.variants.tidy.vcf.gz'),
-     'pharmgkb': os.path.join(anno_dirname, 'PharmGKB_GRCh37.vcf.gz'),
     }
     # optional annotations
     if os.path.exists(os.path.join(anno_dirname, 'hg19.gerp.bw')):
@@ -187,25 +186,6 @@ GnomadInfo = collections.namedtuple('GnomadInfo',
 
 GNOMAD_EMPTY = GnomadInfo(-1, -1, -1, -1, -1, -1, -1, -1,
                           -1, -1, -1, -1, -1, -1, -1, -1)
-                
-class PharmGKBInfo(object):
-    def __init__(self):
-        self.gene = None
-        self.ref_star_alleles = set()
-        self.alt_star_alleles = set()
-
-    def __repr__(self):
-        return '\t'.join(map(str, [
-                          self.gene,
-                          self.ref_star_alleles,
-                          self.alt_star_alleles]))
-
-    def get_pharmgkb_gene_symbol(self, gene):
-        return gene.split(':')[0]
-
-    def get_pharmgkb_star_alleles(self, star_alleles):
-        return ','.join(star_alleles.split(','))
-
 
 def load_annos(args):
     """
@@ -351,12 +331,10 @@ def _get_var_ref_and_alt(var):
                 ref = var.ref
                 alt = var.alt
 
-    if isinstance(alt, basestring):
+    if isinstance(alt, basestring) and len(alt) > 0:
         alt = alt.split(",")
     elif isinstance(alt, (tuple, list)):
         alt = [x for x in alt if x]
-    elif alt == "":
-        alt = []
     return ref, alt
 
 def _get_cadd_scores(var, labels, hit):
@@ -1103,21 +1081,3 @@ def get_resources( args ):
     """
     anno_files = get_anno_files( args )
     return [(n, os.path.basename(anno_files[n])) for n in sorted(anno_files.keys())]
-
-def get_pharmgkb_info(var):
-    pharmgkb = PharmGKBInfo()
-
-    for hit in annotations_in_vcf(var, "pharmgkb", "vcf", region_only=True):
-        info_map = {}
-        vals = hit.info.split(';')
-        for info in vals:
-            if info.find("=") > 0:
-                (key, value) = info.split("=")
-                info_map[key] = value
-            else:
-                info_map[info] = True
-        pharmgkb.gene = pharmgkb.get_pharmgkb_gene_symbol(info_map.get('GENE', ''))
-        pharmgkb.ref_star_alleles = pharmgkb.get_pharmgkb_star_alleles(info_map.get('PGKB_STAR_ALLELES_OF_REF_BASE',''))
-        pharmgkb.alt_star_alleles = pharmgkb.get_pharmgkb_star_alleles(info_map.get('PGKB_STAR_ALLELES_OF_ALT_BASE',''))
-    return pharmgkb
-
