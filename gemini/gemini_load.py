@@ -64,6 +64,8 @@ def finish(args, loader=None):
     loader.store_version()
     loader.store_vcf_header()
 
+    loader._get_haplotypes()
+
     if not args.skip_gene_tables:
         print("storing gene-detailed")
         loader._get_gene_detailed()

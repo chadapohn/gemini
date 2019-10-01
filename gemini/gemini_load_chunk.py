@@ -10,6 +10,7 @@ import numpy as np
 import shutil
 import uuid
 import geneimpacts
+import json
 
 # third-party imports
 import cyvcf2 as vcf
@@ -846,6 +847,16 @@ class GeminiLoader(object):
                     contents = []
 
         database.insert_gene_summary(self.c, self.metadata, contents)
+
+    def _get_haplotypes(self):
+        i = 0
+
+        config = read_gemini_config(args=self.args)
+        path_dirname = config["annotation_dir"]
+        haplotype_file = os.path.join(path_dirname, 'PharmGKB_Haplotypes.json')
+        with open(haplotype_file) as f:
+            haplotypes = json.load(f)
+            print(haplotypes)
 
     def update_gene_table(self):
         """
