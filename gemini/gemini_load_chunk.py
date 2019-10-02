@@ -856,7 +856,9 @@ class GeminiLoader(object):
         haplotype_file = os.path.join(path_dirname, 'PharmGKB_Haplotypes.json')
         with open(haplotype_file) as f:
             haplotypes = json.load(f)
-            print(haplotypes)
+            hap_id = haplotypes.get('data').get('name')
+            gene_id = haplotypes.get('data').get('gene').get('symbol')
+            print(hap_id, gene_id)
 
     def update_gene_table(self):
         """
