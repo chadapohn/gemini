@@ -80,6 +80,11 @@ def index_gene_summary(cursor):
     cursor.execute('''create index gensum_rvis_idx on \
                       gene_summary(rvis_pct)''')
 
+def index_haplotypes(cursor):
+    cursor.execute('''create index hap_name_gene_idx on \
+                        haplotypes(hap_name, gene_symbol)''')
+
+
 def create_indices(cursor):
     """
     Index our master DB tables for speed
@@ -89,6 +94,7 @@ def create_indices(cursor):
     index_samples(cursor)
     index_gene_detailed(cursor)
     index_gene_summary(cursor)
+    index_haplotypes(cursor)
 
 
 def get_path(path):
@@ -356,7 +362,12 @@ def create_tables(path, effect_fields=None, pls=True):
     in_cosmic_census bool,
     """,
 
-    vcf_header="""vcf_header text""")
+    vcf_header="""vcf_header text""",
+
+    haplotypes="""
+    hap_id integer,
+    hap_name varchar(15),
+    gene_symbol varchar(15)""")
 
     # in the future this will be replaced by reading from the conf file.
 
