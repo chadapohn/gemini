@@ -215,12 +215,16 @@ class GeminiLoader(object):
         for var in self.vcf_reader:
             # if not var.ALT or len(var.ALT) == 0:
             #     continue
+
+            # TODO: Skip a no called genotype
+        
             if len(var.ALT) > 1 and not self.seen_multi:
                 self._multiple_alts_message()
 
             if self.args.passonly and (var.FILTER is not None and var.FILTER != "."):
                 self.skipped += 1
                 continue
+
             (variant, variant_impacts) = self._prepare_variation(var, anno_keys)
             obj_buffer.append(var)
             # add the core variant info to the variant buffer
@@ -501,6 +505,8 @@ class GeminiLoader(object):
                 if isinstance(top_impact, list):
                     top_impact = top_impact[0]
 
+        # TODO: Break and tell user to submit a new VCF/GVCF file if CHROM, POS, REF, ALT, GT are invalid format
+
         filter = None
         if var.FILTER is not None and var.FILTER != ".":
             if isinstance(var.FILTER, list):
@@ -524,6 +530,8 @@ class GeminiLoader(object):
 
         if not (self.args.no_genotypes or self.args.no_load_genotypes):
             gt_bases = var.gt_bases
+            # TODO: Add genotype pattern (_gt_pattern)
+            # gt_pattern = ...
             gt_types = var.gt_types
             gt_phases = var.gt_phases
             gt_depths = var.gt_depths
@@ -559,6 +567,7 @@ class GeminiLoader(object):
 
         # construct the core variant record.
         # 1 row per variant to VARIANTS table
+        # TODO: Pack gt_pattern into blob (_gt_pattern)
         variant = dict(chrom=chrom, start=var.start, end=var.end,
                    vcf_id=vcf_id, variant_id=self.v_id, anno_id=top_impact.anno_id,
                    ref=var.REF, alt=','.join([x or "" for x in var.ALT]),
@@ -850,15 +859,18 @@ class GeminiLoader(object):
 
     def _get_haplotypes(self):
         i = 0
+        contents = haplotype_list = []
 
         config = read_gemini_config(args=self.args)
         path_dirname = config["annotation_dir"]
-        haplotype_file = os.path.join(path_dirname, 'PharmGKB_Haplotypes.json')
-        with open(haplotype_file) as f:
-            haplotypes = json.load(f)
-            hap_id = haplotypes.get('data').get('name')
-            gene_id = haplotypes.get('data').get('gene').get('symbol')
-            print(hap_id, gene_id)
+        haplotype_file = os.path.join(path_dirname, 'PharmGKB_Haplotypes.tsv')
+
+        for line in open(haplotype_file, 'r'):
+            field = line.strip().split("\t")
+            if not field[0].startswith("hap"):
+                i += 1
+
+
 
     def update_gene_table(self):
         """

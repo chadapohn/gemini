@@ -64,6 +64,10 @@ def finish(args, loader=None):
     loader.store_version()
     loader.store_vcf_header()
 
+    # TODO: Match haplotype_alleles table and variants table
+    # load haplotypes
+    # load haplotype_alleles
+    # load dosing_guides table
     loader._get_haplotypes()
 
     if not args.skip_gene_tables:

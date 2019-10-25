@@ -80,10 +80,16 @@ def index_gene_summary(cursor):
     cursor.execute('''create index gensum_rvis_idx on \
                       gene_summary(rvis_pct)''')
 
+# TODO: Index haplotypes table
 def index_haplotypes(cursor):
-    cursor.execute('''create index hap_name_gene_idx on \
-                        haplotypes(hap_name, gene_symbol)''')
+    cursor.execute('''create index hap_idx on \
+                        haplotypes(hap, gene)''')
 
+# TODO: Index haplotype_alleles table
+
+# TODO: Index diplotypes table
+
+# TODO: Index dosing_guidelines table
 
 def create_indices(cursor):
     """
@@ -95,6 +101,7 @@ def create_indices(cursor):
     index_gene_detailed(cursor)
     index_gene_summary(cursor)
     index_haplotypes(cursor)
+    # TODO: Create index for haplotypes, haplotype_alleles, diplotypes, dosing_guidelines tables
 
 
 def get_path(path):
@@ -122,6 +129,9 @@ def create_tables(path, effect_fields=None, pls=True):
     else:
         effect_string = ""
 
+    # TODO: Add _definition_ref and _definition_alt columns to store converted alleles as in definition table
+    #       Add _gt_pattern to store unphased genotype pattern
+    # TODO: Create schema for haplotypes, haplotype_alleles, diplotypes, dosing_guidelines tables
     db = dict(variants="""
     chrom varchar(15),
     start integer,
@@ -366,8 +376,12 @@ def create_tables(path, effect_fields=None, pls=True):
 
     haplotypes="""
     hap_id integer,
-    hap_name varchar(15),
-    gene_symbol varchar(15)""")
+    hap varchar(15),
+    gene varchar(15),
+    chrom varchar(15),
+    pgkb_hap_id varchar(15),
+    pgkb_gene_id varchar(15)
+    pgkb_chrom_id varchar(15)""")
 
     # in the future this will be replaced by reading from the conf file.
 
@@ -553,6 +567,10 @@ def insert_version(session, metadata, version):
     t = metadata.tables['version']
     session.execute(t.insert(), dict(version=version))
     session.commit()
+
+# TODO: Insert haplotypes, haplotype_alleles, diplotypes, dosing_guidelines tables
+# def insert_haplotypes(session, metadata, haplotypes):
+
 
 
 def close_and_commit(session):
