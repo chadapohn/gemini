@@ -217,6 +217,8 @@ class GeminiLoader(object):
             #     continue
 
             # TODO: Skip a no called genotype
+            if './.' in var.gt_bases:
+                continue
         
             if len(var.ALT) > 1 and not self.seen_multi:
                 self._multiple_alts_message()
@@ -863,14 +865,6 @@ class GeminiLoader(object):
 
         config = read_gemini_config(args=self.args)
         path_dirname = config["annotation_dir"]
-        haplotype_file = os.path.join(path_dirname, 'PharmGKB_Haplotypes.tsv')
-
-        for line in open(haplotype_file, 'r'):
-            field = line.strip().split("\t")
-            if not field[0].startswith("hap"):
-                i += 1
-
-
 
     def update_gene_table(self):
         """
