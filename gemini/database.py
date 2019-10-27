@@ -83,7 +83,7 @@ def index_gene_summary(cursor):
 # TODO: Index haplotypes table
 def index_haplotypes(cursor):
     cursor.execute('''create index hap_idx on \
-                        haplotypes(hap, gene)''')
+                        haplotypes(gene_symbol, name)''')
 
 # TODO: Index haplotype_alleles table
 
@@ -375,13 +375,11 @@ def create_tables(path, effect_fields=None, pls=True):
     vcf_header="""vcf_header text""",
 
     haplotypes="""
-    hap_id integer,
-    hap varchar(15),
-    gene varchar(15),
-    chrom varchar(15),
-    pgkb_hap_id varchar(15),
-    pgkb_gene_id varchar(15)
-    pgkb_chrom_id varchar(15)""")
+    uid integer,
+    gene_symbol varchar(15),
+    name varchar(15),
+    num_variants integer,
+    """)
 
     # in the future this will be replaced by reading from the conf file.
 
@@ -543,6 +541,18 @@ def insert_gene_summary(session, metadata, contents):
     session.execute(t.insert(), list(gen_gene_vals(cols, contents)))
     session.commit()
 
+# TODO: Insert haplotypes, haplotype_alleles, diplotypes, dosing_guidelines tables
+def insert_haplotypes(session, metadata, contents):
+    t = metadata.tables['haplotypes']
+    cols = _get_cols(t)
+    interim = []
+    for row in contents:
+        interim.append(dict(zip(cols, row)))
+
+    session.execute(t.insert(), interim)
+    session.commit()
+
+
 def insert_resources(session, metadata, resources):
     """Populate table of annotation resources used in this database.
     """
@@ -567,11 +577,6 @@ def insert_version(session, metadata, version):
     t = metadata.tables['version']
     session.execute(t.insert(), dict(version=version))
     session.commit()
-
-# TODO: Insert haplotypes, haplotype_alleles, diplotypes, dosing_guidelines tables
-# def insert_haplotypes(session, metadata, haplotypes):
-
-
 
 def close_and_commit(session):
     """

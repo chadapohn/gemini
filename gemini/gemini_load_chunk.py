@@ -18,7 +18,7 @@ import cyvcf2 as vcf
 # gemini modules
 from . import version
 from .ped import load_ped_file
-from . import gene_table
+from . import gene_table, haplotype_table
 from . import infotag
 from . import database
 from . import annotations
@@ -860,11 +860,24 @@ class GeminiLoader(object):
         database.insert_gene_summary(self.c, self.metadata, contents)
 
     def _get_haplotypes(self):
-        i = 0
-        contents = haplotype_list = []
-
         config = read_gemini_config(args=self.args)
         path_dirname = config["annotation_dir"]
+        file = os.path.join(path_dirname, 'PharmGKB_Haplotypes_GRCh38.tsv')
+
+        i = 0
+        contents = haplotype_list = []
+        for line in open(file, 'r'):
+            col = line.strip().split("\t")
+            if not col[0].startswith("gene_symbol"):
+                i += 1
+                table = haplotype_table.haplotype(col)
+                haplotype_list = [str(i), table.gene_symbol, table.name, table.num_variants]
+                contents.append(haplotype_list)
+                if i % 1000 == 0:
+                    database.insert_haplotypes(self.c, self.metadata, contents)
+                    contents = []
+
+        database.insert_haplotypes(self.c, self.metadata, contents)
 
     def update_gene_table(self):
         """
