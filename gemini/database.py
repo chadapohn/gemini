@@ -80,12 +80,17 @@ def index_gene_summary(cursor):
     cursor.execute('''create index gensum_rvis_idx on \
                       gene_summary(rvis_pct)''')
 
-# TODO: Index haplotypes table
 def index_haplotypes(cursor):
-    cursor.execute('''create index hap_idx on \
-                        haplotypes(gene_symbol, name)''')
+    cursor.execute('''create index hap_gene_name_idx on \
+                        haplotypes(gene, name)''')
 
-# TODO: Index haplotype_alleles table
+def index_phased_data_haplotype_alleles(cursor):
+    cursor.execute('''create index hapal_start_idx on \
+                        phased_data_haplotype_alleles(start)''')
+    cursor.execute('''create index hapal_type_idx on \
+                        phased_data_haplotype_alleles(type)''')
+
+# TODO: Index unphased_data_haplotype_alleles
 
 # TODO: Index diplotypes table
 
@@ -102,6 +107,7 @@ def create_indices(cursor):
     index_gene_summary(cursor)
     index_haplotypes(cursor)
     # TODO: Create index for haplotypes, haplotype_alleles, diplotypes, dosing_guidelines tables
+    index_phased_data_haplotype_alleles(cursor)
 
 
 def get_path(path):
@@ -376,9 +382,22 @@ def create_tables(path, effect_fields=None, pls=True):
 
     haplotypes="""
     uid integer,
-    gene_symbol varchar(15),
+    gene varchar(15),
     name varchar(15),
     num_variants integer,
+    """,
+
+    phased_data_haplotype_alleles="""
+    uid integer,
+    hap_id integer,
+    matched_var_id integer,
+    start integer,
+    end integer,
+    chrom_hgvs_name varchar(60),
+    rsid varchar(15),
+    allele text,
+    _iupac_pattern text,
+    type varchar(15),
     """)
 
     # in the future this will be replaced by reading from the conf file.
@@ -541,17 +560,22 @@ def insert_gene_summary(session, metadata, contents):
     session.execute(t.insert(), list(gen_gene_vals(cols, contents)))
     session.commit()
 
-# TODO: Insert haplotypes, haplotype_alleles, diplotypes, dosing_guidelines tables
+def gen_hap_vals(cols, contents):
+    for row in contents:
+        d = dict(zip(cols, row))
+        yield d
+
 def insert_haplotypes(session, metadata, contents):
     t = metadata.tables['haplotypes']
     cols = _get_cols(t)
-    interim = []
-    for row in contents:
-        interim.append(dict(zip(cols, row)))
-
-    session.execute(t.insert(), interim)
+    session.execute(t.insert(), list(gen_hap_vals(cols, contents)))
     session.commit()
 
+def insert_phased_data_haplotype_alleles(session, metadata, contents):
+    t = metadata.tables['phased_data_haplotype_alleles']
+    cols = _get_cols(t)
+    session.execute(t.insert(), list(gen_hap_vals(cols, contents)))
+    session.commit()
 
 def insert_resources(session, metadata, resources):
     """Populate table of annotation resources used in this database.
