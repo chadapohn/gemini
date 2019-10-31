@@ -865,19 +865,46 @@ class GeminiLoader(object):
         file = os.path.join(path_dirname, 'PharmGKB_Haplotypes_GRCh38.tsv')
 
         i = 0
-        contents = haplotype_list = []
+        j = 0
+        haplotypes = [] 
+        alleles = []
+        haplotype_list = [] 
+        allele_list = []
         for line in open(file, 'r'):
             col = line.strip().split("\t")
-            if not col[0].startswith("gene_symbol"):
+            if not col[0].startswith("gene"):
                 i += 1
-                table = haplotype_table.haplotype(col)
-                haplotype_list = [str(i), table.gene_symbol, table.name, table.num_variants]
-                contents.append(haplotype_list)
-                if i % 1000 == 0:
-                    database.insert_haplotypes(self.c, self.metadata, contents)
-                    contents = []
 
-        database.insert_haplotypes(self.c, self.metadata, contents)
+                h = haplotype_table.haplotype(col)
+                haplotype_list = [str(i), h.gene, h.name, h.num_variants]
+
+                if haplotype_list not in haplotypes:
+                    haplotypes.append(haplotype_list)
+
+                num_variants = int(h.num_variants)
+                for k in range(0, num_variants):
+                    _iupac_pattern = None
+                    sub_col = [h.starts.split(',')[k], h.ends.split(',')[k],
+                                h.chrom_hgvs_names.split(',')[k], 
+                                h.rsids.split(',')[k], h.alleles.split(',')[k], 
+                                _iupac_pattern, h.types.split(',')[k]] 
+
+                    a = haplotype_table.haplotype_alleles(sub_col)
+                    matched_var_id = 0
+                    j += 1
+                    allele_list = [str(j), str(i), str(matched_var_id), a.start, a.end, 
+                                    a.chrom_hgvs_name, a.rsid, a.allele, a._iupac_pattern, a.type]
+                    alleles.append(allele_list)
+
+                if len(haplotypes) % 1000 == 0:
+                    database.insert_haplotypes(self.c, self.metadata, haplotypes)
+                    haplotypes = []
+
+                    database.insert_phased_data_haplotype_alleles(self.c, self.metadata, alleles)
+                    alleles = []
+     
+        database.insert_haplotypes(self.c, self.metadata, haplotypes)
+        database.insert_phased_data_haplotype_alleles(self.c, self.metadata, alleles)
 
     def update_gene_table(self):
         """
