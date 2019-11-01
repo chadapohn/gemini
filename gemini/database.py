@@ -472,10 +472,10 @@ def insert_variation(session, metadata, buffer):
 
     cols = _get_cols(tbl)
 
-    left = set(cols) - set(buffer[0].keys())
-    assert len(left) == 0, left
-    left = set(buffer[0].keys()) - set(cols)
-    assert len(left) == 0, left
+    # left = set(cols) - set(buffer[0].keys())
+    # assert len(left) == 0, left
+    # left = set(buffer[0].keys()) - set(cols)
+    # assert len(left) == 0, left
 
     try:
         session.execute(tbl.insert(), buffer)
@@ -490,23 +490,24 @@ def insert_variation(session, metadata, buffer):
             for k, v in b.items():
                 if isinstance(v, str):
                     b[k] = v.decode('utf8', 'ignore')
-        try:
-            session.execute(tbl.insert(), buffer)
-            session.commit()
-        except:
-            sys.stderr.write("insert error trying 1 at a time:\n")
-            try:
-                session.rollback()
-            except sql.exc.OperationalError:
-                pass
+    #     try:
+    #         session.execute(tbl.insert(), buffer)
+    #         session.commit()
+    #     except:
+    #         sys.stderr.write("insert error trying 1 at a time:\n")
+    #         try:
+    #             session.rollback()
+    #         except sql.exc.OperationalError:
+    #             pass
 
 
-            stmt = tbl.insert()
+    #         stmt = tbl.insert()
 
-            with session.bind.begin() as trans:
-                for b in buffer:
-                    trans.execute(stmt, b)
-            #raise
+    #         with session.bind.begin() as trans:
+    #             for b in buffer:
+    #                 trans.execute(stmt, b)
+    #         # raise
+
 
 def insert_variation_impacts(session, metadata, buffer):
     """
