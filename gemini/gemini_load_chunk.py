@@ -267,6 +267,10 @@ class GeminiLoader(object):
                              str(self.skipped) + " skipped due to having the "
                              "FILTER field set.\n")
 
+        self._prepare_haplotypes()
+
+
+
     def _update_extra_headers(self, headers, cur_fields):
         """Update header information for extra fields.
         """
@@ -776,6 +780,53 @@ class GeminiLoader(object):
 
         return variant, variant_impacts
 
+    def _prepare_haplotypes(self):
+        config = read_gemini_config(args=self.args)
+        path_dirname = config["annotation_dir"]
+        hap_file = os.path.join(path_dirname, 'PharmGKB_Haplotypes_GRCh38.tsv')
+
+        hap_id = 0
+        allele_id = 0
+        haplotypes = [] 
+        alleles = []
+        haplotype_list = [] 
+        allele_list = []
+        for line in open(hap_file, 'r'):
+            col = line.strip().split("\t")
+            if not col[0].startswith("gene"):
+                hap_id += 1
+
+                h = haplotype_table.haplotype(col)
+                haplotype_list = [str(hap_id), h.gene, h.name, h.num_variants]
+
+                if haplotype_list not in haplotypes:
+                    haplotypes.append(haplotype_list)
+
+                num_variants = int(h.num_variants)
+                for k in range(0, num_variants):
+                    _iupac_pattern = None
+                    sub_col = [h.starts.split(',')[k], h.ends.split(',')[k],
+                                h.chrom_hgvs_names.split(',')[k], 
+                                h.rsids.split(',')[k], h.alleles.split(',')[k], 
+                                _iupac_pattern, h.types.split(',')[k]] 
+
+                    a = haplotype_table.haplotype_alleles(sub_col)
+                    matched_var_id = 0
+                    allele_id += 1
+                    allele_list = [str(allele_id), str(hap_id), str(matched_var_id), a.start, a.end, 
+                                    a.chrom_hgvs_name, a.rsid, a.allele, a._iupac_pattern, a.type]
+                    alleles.append(allele_list)
+
+                if len(haplotypes) % 1000 == 0:
+                    database.insert_haplotypes(self.c, self.metadata, haplotypes)
+                    haplotypes = []
+
+                    database.insert_phased_data_haplotype_alleles(self.c, self.metadata, alleles)
+                    alleles = []
+     
+        database.insert_haplotypes(self.c, self.metadata, haplotypes)
+        database.insert_phased_data_haplotype_alleles(self.c, self.metadata, alleles)
+
     def _prepare_samples(self):
         """
         private method to load sample information
@@ -865,53 +916,6 @@ class GeminiLoader(object):
                     contents = []
 
         database.insert_gene_summary(self.c, self.metadata, contents)
-
-    def _get_haplotypes(self):
-        config = read_gemini_config(args=self.args)
-        path_dirname = config["annotation_dir"]
-        file = os.path.join(path_dirname, 'PharmGKB_Haplotypes_GRCh38.tsv')
-
-        i = 0
-        j = 0
-        haplotypes = [] 
-        alleles = []
-        haplotype_list = [] 
-        allele_list = []
-        for line in open(file, 'r'):
-            col = line.strip().split("\t")
-            if not col[0].startswith("gene"):
-                i += 1
-
-                h = haplotype_table.haplotype(col)
-                haplotype_list = [str(i), h.gene, h.name, h.num_variants]
-
-                if haplotype_list not in haplotypes:
-                    haplotypes.append(haplotype_list)
-
-                num_variants = int(h.num_variants)
-                for k in range(0, num_variants):
-                    _iupac_pattern = None
-                    sub_col = [h.starts.split(',')[k], h.ends.split(',')[k],
-                                h.chrom_hgvs_names.split(',')[k], 
-                                h.rsids.split(',')[k], h.alleles.split(',')[k], 
-                                _iupac_pattern, h.types.split(',')[k]] 
-
-                    a = haplotype_table.haplotype_alleles(sub_col)
-                    matched_var_id = 0
-                    j += 1
-                    allele_list = [str(j), str(i), str(matched_var_id), a.start, a.end, 
-                                    a.chrom_hgvs_name, a.rsid, a.allele, a._iupac_pattern, a.type]
-                    alleles.append(allele_list)
-
-                if len(haplotypes) % 1000 == 0:
-                    database.insert_haplotypes(self.c, self.metadata, haplotypes)
-                    haplotypes = []
-
-                    database.insert_phased_data_haplotype_alleles(self.c, self.metadata, alleles)
-                    alleles = []
-     
-        database.insert_haplotypes(self.c, self.metadata, haplotypes)
-        database.insert_phased_data_haplotype_alleles(self.c, self.metadata, alleles)
 
     def update_gene_table(self):
         """
