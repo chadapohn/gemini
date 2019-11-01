@@ -64,11 +64,8 @@ def finish(args, loader=None):
     loader.store_version()
     loader.store_vcf_header()
 
-    # TODO: Match haplotype_alleles table and variants table
-    # load haplotypes
-    # load haplotype_alleles
-    # load dosing_guides table
-    loader._get_haplotypes()
+    # TODO: load the dosing_guidelines table
+    # loader._get_dosing_guidelines()
 
     if not args.skip_gene_tables:
         print("storing gene-detailed")
