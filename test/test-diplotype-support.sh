@@ -24,12 +24,13 @@ rm obs exp
 # 2. Test a query of the haplotypes table
 ###########################################################################
 echo "    load.t2...\c"
-echo "uid	gene	name	num_variants
-1	CAC1NAS	Reference	2
-2	CAC1NAS	c.520C>T	2
-3	CAC1NAS	c.3257	2" > exp
+echo "gene	name	num_variants
+CAC1NAS	Reference	2
+CAC1NAS	c.520C>T	2
+CAC1NAS	c.3257	2
+CYP2C19	*2	1" > exp
 
-gemini query --header -q "select uid, gene, name, num_variants from haplotypes limit 3" non-variants-included-snippet.db > obs
+gemini query --header -q "select gene, name, num_variants from haplotypes" non-variants-included-snippet.db > obs
 check obs exp
 rm obs exp
 
