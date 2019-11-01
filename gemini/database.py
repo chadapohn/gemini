@@ -42,7 +42,7 @@ def index_variation(cursor):
     cursor.execute('''create index var_cadd_raw_idx on variants(cadd_raw)''')
     cursor.execute('''create index var_cadd_scaled_idx on variants(cadd_scaled)''')
     cursor.execute('''create index var_fitcons_idx on variants(fitcons)''')
-    cursor.execute('''create index chrom_varid_idx on variants(chrom,variant_id)''')
+    cursor.execute('''create index chrom_start_idx on variants(variant_id)''')
     cursor.execute('CREATE index max_aaf_all_idx on variants(max_aaf_all)')
 
 def index_variation_impacts(cursor):
@@ -143,7 +143,7 @@ def create_tables(path, effect_fields=None, pls=True):
     start integer,
     end integer,
     vcf_id text,
-    variant_id integer,
+    variant_id varchar(60),
     anno_id integer,
     ref text,
     alt text,
@@ -303,7 +303,7 @@ def create_tables(path, effect_fields=None, pls=True):
     %s""" % (pls, effect_string.rstrip(",")),
 
     variant_impacts="""
-    variant_id integer,
+    variant_id varchar(60),
     anno_id integer,
     gene varchar(60),
     transcript varchar(60),
@@ -507,7 +507,6 @@ def insert_variation(session, metadata, buffer):
                 for b in buffer:
                     trans.execute(stmt, b)
             #raise
-
 
 def insert_variation_impacts(session, metadata, buffer):
     """
