@@ -162,22 +162,15 @@ class GeminiLoader(object):
         database.insert_version(self.c, self.metadata, version.__version__.strip())
 
     def _update_vid(self, variant):
-        chrom = variant.CHROM if variant.CHROM.startswith("chr") else "chr" + variant.CHROM
+        chrom = variant.CHROM if variant.CHROM.startswith("chr") else "chr" + variantf.CHROM
         self.v_id = chrom + '_' + str(variant.start)
 
     def _get_vid(self):
-        # TODO: Change offset argument into "chrom_start"
         if hasattr(self.args, 'offset'):
-            v_id = self.args.offset
+            v_id = int(self.args.offset)
         else:
-            v_id = None
+            v_id = 1
         return v_id
-        
-        # if hasattr(self.args, 'offset'):
-        #     v_id = int(self.args.offset)
-        # else:
-        #     v_id = 1
-        # return v_id
 
     def _multiple_alts_message(self):
         self.seen_multi = 1
