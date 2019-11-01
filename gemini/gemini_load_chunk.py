@@ -161,12 +161,23 @@ class GeminiLoader(object):
         """
         database.insert_version(self.c, self.metadata, version.__version__.strip())
 
+    def _update_vid(self, variant):
+        chrom = variant.CHROM if variant.CHROM.startswith("chr") else "chr" + variant.CHROM
+        self.v_id = chrom + '_' + str(variant.start)
+
     def _get_vid(self):
+        # TODO: Change offset argument into "chrom_start"
         if hasattr(self.args, 'offset'):
-            v_id = int(self.args.offset)
+            v_id = self.args.offset
         else:
-            v_id = 1
+            v_id = None
         return v_id
+        
+        # if hasattr(self.args, 'offset'):
+        #     v_id = int(self.args.offset)
+        # else:
+        #     v_id = 1
+        # return v_id
 
     def _multiple_alts_message(self):
         self.seen_multi = 1
@@ -180,7 +191,8 @@ class GeminiLoader(object):
         """
         """
 
-        self.v_id = self._get_vid()
+        # self.v_id = self._get_vid()
+        self.v_id = None
         self.counter = 0
         self.var_buffer = []
         self.var_impacts_buffer = []
@@ -213,6 +225,7 @@ class GeminiLoader(object):
 
         # process and load each variant in the VCF file
         for var in self.vcf_reader:
+            self._update_vid(var)
             # if not var.ALT or len(var.ALT) == 0:
             #     continue
 
@@ -247,10 +260,10 @@ class GeminiLoader(object):
                 obj_buffer = []
                 self.var_buffer = []
                 self.var_impacts_buffer = []
-            self.v_id += 1
+            # self.v_id = None
             self.counter += 1
         # final load to the database
-        self.v_id -= 1
+        # self.v_id -= 1
         if self.var_buffer:
             database.insert_variation(self.c, self.metadata, self.var_buffer)
             database.insert_variation_impacts(self.c, self.metadata, self.var_impacts_buffer)
@@ -570,6 +583,7 @@ class GeminiLoader(object):
         # construct the core variant record.
         # 1 row per variant to VARIANTS table
         # TODO: Pack gt_pattern into blob (_gt_pattern)
+
         variant = dict(chrom=chrom, start=var.start, end=var.end,
                    vcf_id=vcf_id, variant_id=self.v_id, anno_id=top_impact.anno_id,
                    ref=var.REF, alt=','.join([x or "" for x in var.ALT]),
