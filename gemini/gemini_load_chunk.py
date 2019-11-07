@@ -11,6 +11,7 @@ import shutil
 import uuid
 import geneimpacts
 import json
+import pysam
 
 # third-party imports
 import cyvcf2 as vcf
@@ -27,6 +28,9 @@ from . import structural_variants as svs
 from .gemini_constants import *
 from .compression import pack_blob
 from .config import read_gemini_config
+from . import iupac
+
+tabix_vcf = None
 
 class empty(object):
     def __getattr__(self, key):
@@ -234,6 +238,7 @@ class GeminiLoader(object):
                 continue
 
             (variant, variant_impacts) = self._prepare_variation(var, anno_keys)
+            
             obj_buffer.append(var)
             # add the core variant info to the variant buffer
             self.var_buffer.append(variant)
@@ -266,9 +271,6 @@ class GeminiLoader(object):
             sys.stderr.write("pid " + str(os.getpid()) + ": " +
                              str(self.skipped) + " skipped due to having the "
                              "FILTER field set.\n")
-
-        self._prepare_haplotypes()
-
 
 
     def _update_extra_headers(self, headers, cur_fields):
@@ -580,7 +582,6 @@ class GeminiLoader(object):
         # construct the core variant record.
         # 1 row per variant to VARIANTS table
         # TODO: Pack gt_pattern into blob (_gt_pattern)
-
         variant = dict(chrom=chrom, start=var.start, end=var.end,
                    vcf_id=vcf_id, variant_id=self.v_id, anno_id=top_impact.anno_id,
                    ref=var.REF, alt=','.join([x or "" for x in var.ALT]),
@@ -780,53 +781,6 @@ class GeminiLoader(object):
 
         return variant, variant_impacts
 
-    def _prepare_haplotypes(self):
-        config = read_gemini_config(args=self.args)
-        path_dirname = config["annotation_dir"]
-        hap_file = os.path.join(path_dirname, 'PharmGKB_Haplotypes_GRCh38.tsv')
-
-        hap_id = 0
-        allele_id = 0
-        haplotypes = [] 
-        alleles = []
-        haplotype_list = [] 
-        allele_list = []
-        for line in open(hap_file, 'r'):
-            col = line.strip().split("\t")
-            if not col[0].startswith("gene"):
-                hap_id += 1
-
-                h = haplotype_table.haplotype(col)
-                haplotype_list = [str(hap_id), h.gene, h.name, h.num_variants]
-
-                if haplotype_list not in haplotypes:
-                    haplotypes.append(haplotype_list)
-
-                num_variants = int(h.num_variants)
-                for k in range(0, num_variants):
-                    _iupac_pattern = None
-                    sub_col = [h.starts.split(',')[k], h.ends.split(',')[k],
-                                h.chrom_hgvs_names.split(',')[k], 
-                                h.rsids.split(',')[k], h.alleles.split(',')[k], 
-                                _iupac_pattern, h.types.split(',')[k]] 
-
-                    a = haplotype_table.haplotype_alleles(sub_col)
-                    matched_var_id = 0
-                    allele_id += 1
-                    allele_list = [str(allele_id), str(hap_id), str(matched_var_id), a.start, a.end, 
-                                    a.chrom_hgvs_name, a.rsid, a.allele, a._iupac_pattern, a.type]
-                    alleles.append(allele_list)
-
-                if len(haplotypes) % 1000 == 0:
-                    database.insert_haplotypes(self.c, self.metadata, haplotypes)
-                    haplotypes = []
-
-                    database.insert_phased_data_haplotype_alleles(self.c, self.metadata, alleles)
-                    alleles = []
-     
-        database.insert_haplotypes(self.c, self.metadata, haplotypes)
-        database.insert_phased_data_haplotype_alleles(self.c, self.metadata, alleles)
-
     def _prepare_samples(self):
         """
         private method to load sample information
@@ -961,6 +915,72 @@ class GeminiLoader(object):
                                       for idx, gtc in enumerate(self.sample_gt_counts)])
         self.c.commit()
 
+    def populate_from_haplotype_alleles(self):
+        # load tabix vcf
+        # TODO: raise IOError if gemini can't open input vcf file
+        vcf = self.args.vcf
+        if vcf.endswith(".gz"):
+            global tabix_vcf
+            tabix_vcf = pysam.Tabixfile(vcf)
+
+        # load haplotypes and haplotype alleles
+        config = read_gemini_config(args=self.args)
+        path_dirname = config["annotation_dir"]
+        hap_file = os.path.join(path_dirname, 'PharmGKB_Haplotypes_GRCh38.tsv')
+
+        hap_id = 0
+        allele_id = 0
+        haplotypes = [] 
+        alleles = []
+        haplotype_list = [] 
+        allele_list = []
+
+        all_allele_coords = []
+        for line in open(hap_file, 'r'):
+            col = line.strip().split("\t")
+            if not col[0].startswith("gene"):
+                hap_id += 1
+
+                h = haplotype_table.haplotype(col)
+                haplotype_list = [str(hap_id), h.gene, h.name, h.num_variants]
+
+                if haplotype_list not in haplotypes:
+                    haplotypes.append(haplotype_list)
+
+                num_variants = int(h.num_variants)
+                for k in range(0, num_variants):
+                    sub_col = [h.chrom, h.starts.split(',')[k], h.ends.split(',')[k],
+                                h.chrom_hgvs_names.split(',')[k], 
+                                h.rsids.split(',')[k], h.alleles.split(',')[k], 
+                                "[" + ''.join(iupac.lookup(h.alleles.split(',')[k])) + "]", h.types.split(',')[k]] 
+
+                    a = haplotype_table.haplotype_alleles(sub_col)
+                    matched_var_id = 0
+                    allele_id += 1
+                    allele_list = [str(allele_id), str(hap_id), str(matched_var_id), a.chrom, a.start, a.end, 
+                                    a.chrom_hgvs_name, a.rsid, a.allele, a._iupac_pattern, a.type]
+                    alleles.append(allele_list)
+
+                    # get variant coords of each star allele
+                    allele_coords = [a.chrom, int(a.start), int(a.end)]
+                    if allele_coords not in all_allele_coords:
+                        all_allele_coords.append(allele_coords)
+
+                        hits = annotations._get_hits(allele_coords, tabix_vcf, parser_type="vcf")
+                        
+                        for hit in hits:
+                            print(hit.contig, hit.pos, hit.ref, hit.alt) 
+
+                if len(haplotypes) % 1000 == 0:
+                    database.insert_haplotypes(self.c, self.metadata, haplotypes)
+                    haplotypes = []
+
+                    database.insert_phased_data_haplotype_alleles(self.c, self.metadata, alleles)
+                    alleles = []
+
+        database.insert_haplotypes(self.c, self.metadata, haplotypes)
+        database.insert_phased_data_haplotype_alleles(self.c, self.metadata, alleles)
+        
 def load(parser, args):
     if (args.db is None or args.vcf is None):
         parser.print_help()

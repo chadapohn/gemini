@@ -87,6 +87,7 @@ def load_singlecore(args):
     # the gemini db and files from the VCF
     l = GeminiLoader(args)
     l.populate_from_vcf()
+    l.populate_from_haplotype_alleles()
     if not args.no_genotypes and not args.no_load_genotypes:
         l.store_sample_gt_counts()
     return l
