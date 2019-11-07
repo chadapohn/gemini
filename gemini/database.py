@@ -85,8 +85,8 @@ def index_haplotypes(cursor):
                         haplotypes(gene, name)''')
 
 def index_phased_data_haplotype_alleles(cursor):
-    cursor.execute('''create index hapal_start_idx on \
-                        phased_data_haplotype_alleles(start)''')
+    cursor.execute('''create index hapal_chrom_start_idx on \
+                        phased_data_haplotype_alleles(chrom, start)''')
     cursor.execute('''create index hapal_type_idx on \
                         phased_data_haplotype_alleles(type)''')
 
@@ -391,6 +391,7 @@ def create_tables(path, effect_fields=None, pls=True):
     uid integer,
     hap_id integer,
     matched_var_id integer,
+    chrom varchar(15),
     start integer,
     end integer,
     chrom_hgvs_name varchar(60),
