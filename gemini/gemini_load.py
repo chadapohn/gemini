@@ -13,6 +13,7 @@ from gemini.gemini_load_chunk import GeminiLoader
 import uuid
 import time
 import datetime
+from . import haplotypes
 
 
 def load(parser, args):
@@ -41,6 +42,9 @@ def load(parser, args):
             sys.stderr.write("GERP per bp is being loaded (to skip use:--skip-gerp-bp).\n")
     # collect of the the add'l annotation files
     annotations.load_annos(args)
+
+    #
+    haplotypes.load_tabix_vcf(args)
 
     l = None
     if args.scheduler:
