@@ -19,7 +19,7 @@ class haplotype:
                         self.starts, self.ends, self.chrom_hgvs_names,
                         self.rsids, self.alleles, self.types])
 
-class  haplotype_alleles:
+class  haplotype_allele:
     def __init__(self, col):
         col = [None if c == 'None' else c for c in col]
         self.cols = col[:]
