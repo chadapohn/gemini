@@ -330,8 +330,10 @@ def _get_var_ref_and_alt(var):
                 # For Pysam reader:
                 ref = var.ref
                 alt = var.alt
-
-    if isinstance(alt, basestring):
+   
+    if alt == ".":
+        alt = []
+    elif isinstance(alt, basestring):
         alt = alt.split(",")
     elif isinstance(alt, (tuple, list)):
         alt = [x for x in alt if x]
