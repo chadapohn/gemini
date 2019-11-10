@@ -29,6 +29,7 @@ from .gemini_constants import *
 from .compression import pack_blob
 from .config import read_gemini_config
 from . import iupac
+from . import haplotypes
 
 tabix_vcf = None
 
@@ -916,69 +917,61 @@ class GeminiLoader(object):
         self.c.commit()
 
     def populate_from_haplotype_alleles(self):
-        # load tabix vcf
-        # TODO: raise IOError if gemini can't open input vcf file
-        vcf = self.args.vcf
-        if vcf.endswith(".gz"):
-            global tabix_vcf
-            tabix_vcf = pysam.Tabixfile(vcf)
-
         # load haplotypes and haplotype alleles
         config = read_gemini_config(args=self.args)
         path_dirname = config["annotation_dir"]
         hap_file = os.path.join(path_dirname, 'PharmGKB_Haplotypes_GRCh38.tsv')
 
         hap_id = 0
-        allele_id = 0
-        haplotypes = [] 
-        alleles = []
-        haplotype_list = [] 
-        allele_list = []
+        hap_list = [] 
+        seen = []
+        haps = []
 
-        all_allele_coords = []
+        allele_id = 0
+        allele_list = []
+        alleles = []
+
         for line in open(hap_file, 'r'):
             col = line.strip().split("\t")
             if not col[0].startswith("gene"):
                 hap_id += 1
 
-                h = haplotype_table.haplotype(col)
-                haplotype_list = [str(hap_id), h.gene, h.name, h.num_variants]
+                hap = haplotype_table.haplotype(col)
+                hap_list = [str(hap_id), hap.gene, hap.name, hap.num_variants]
 
-                if haplotype_list not in haplotypes:
-                    haplotypes.append(haplotype_list)
+                if hap_list not in seen:
+                    haps.append(hap_list)
 
-                num_variants = int(h.num_variants)
-                for k in range(0, num_variants):
-                    sub_col = [h.chrom, h.starts.split(',')[k], h.ends.split(',')[k],
-                                h.chrom_hgvs_names.split(',')[k], 
-                                h.rsids.split(',')[k], h.alleles.split(',')[k], 
-                                "[" + ''.join(iupac.lookup(h.alleles.split(',')[k])) + "]", h.types.split(',')[k]] 
+                print(hap.name, hap.gene)
 
-                    a = haplotype_table.haplotype_alleles(sub_col)
-                    matched_var_id = 0
+                num_variants = int(hap.num_variants)
+                for pos in range(0, num_variants):
+                    sub_col = [hap.chrom, hap.starts.split(',')[pos], hap.ends.split(',')[pos],
+                                hap.chrom_hgvs_names.split(',')[pos], 
+                                hap.rsids.split(',')[pos], hap.alleles.split(',')[pos], 
+                                "[" + ''.join(iupac.lookup(hap.alleles.split(',')[pos])) + "]", hap.types.split(',')[pos]] 
+
+                    allele = haplotype_table.haplotype_allele(sub_col)
+                    var_id = 0
                     allele_id += 1
-                    allele_list = [str(allele_id), str(hap_id), str(matched_var_id), a.chrom, a.start, a.end, 
-                                    a.chrom_hgvs_name, a.rsid, a.allele, a._iupac_pattern, a.type]
+                    allele_list = [str(allele_id), str(hap_id), str(var_id), allele.chrom, allele.start, allele.end, 
+                                    allele.chrom_hgvs_name, allele.rsid, allele.allele, allele._iupac_pattern, allele.type]
                     alleles.append(allele_list)
 
-                    # get variant coords of each star allele
-                    allele_coords = [a.chrom, int(a.start), int(a.end)]
-                    if allele_coords not in all_allele_coords:
-                        all_allele_coords.append(allele_coords)
-
-                        hits = annotations._get_hits(allele_coords, tabix_vcf, parser_type="vcf")
-                        
-                        for hit in hits:
-                            print(hit.contig, hit.pos, hit.ref, hit.alt) 
-
-                if len(haplotypes) % 1000 == 0:
-                    database.insert_haplotypes(self.c, self.metadata, haplotypes)
-                    haplotypes = []
+                    # match each star alleles with patient genotypes
+                    scores, var_ids = haplotypes.match(allele)
+                    
+                    print(hap.chrom, allele.start, scores, var_ids)
+                 
+                    
+                if len(haps) % 1000 == 0:
+                    database.insert_haplotypes(self.c, self.metadata, haps)
+                    haps = []
 
                     database.insert_phased_data_haplotype_alleles(self.c, self.metadata, alleles)
                     alleles = []
 
-        database.insert_haplotypes(self.c, self.metadata, haplotypes)
+        database.insert_haplotypes(self.c, self.metadata, haps)
         database.insert_phased_data_haplotype_alleles(self.c, self.metadata, alleles)
         
 def load(parser, args):
