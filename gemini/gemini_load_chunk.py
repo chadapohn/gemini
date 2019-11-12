@@ -959,9 +959,9 @@ class GeminiLoader(object):
                     alleles.append(allele_list)
 
                     # match each star alleles with patient genotypes
-                    scores, var_ids = haplotypes.match(allele)
+                    scores, var_id = haplotypes.match(allele)
                     
-                    print(hap.chrom, allele.start, scores, var_ids)
+                    print(hap.chrom, allele.start, scores, var_id)
                  
                     
                 if len(haps) % 1000 == 0:
