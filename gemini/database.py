@@ -84,13 +84,11 @@ def index_haplotypes(cursor):
     cursor.execute('''create index hap_gene_name_idx on \
                         haplotypes(gene, name)''')
 
-def index_phased_data_haplotype_alleles(cursor):
+def index_haplotype_alleles(cursor):
     cursor.execute('''create index hapal_chrom_start_idx on \
-                        phased_data_haplotype_alleles(chrom, start)''')
+                        haplotype_alleles(chrom, start)''')
     cursor.execute('''create index hapal_type_idx on \
-                        phased_data_haplotype_alleles(type)''')
-
-# TODO: Index unphased_data_haplotype_alleles
+                        haplotype_alleles(type)''')
 
 # TODO: Index diplotypes table
 
@@ -107,7 +105,7 @@ def create_indices(cursor):
     index_gene_summary(cursor)
     index_haplotypes(cursor)
     # TODO: Create index for haplotypes, haplotype_alleles, diplotypes, dosing_guidelines tables
-    index_phased_data_haplotype_alleles(cursor)
+    index_haplotype_alleles(cursor)
 
 
 def get_path(path):
@@ -387,7 +385,7 @@ def create_tables(path, effect_fields=None, pls=True):
     num_variants integer,
     """,
 
-    phased_data_haplotype_alleles="""
+    haplotype_alleles="""
     uid integer,
     hap_id integer,
     matched_var_id integer,
@@ -572,8 +570,8 @@ def insert_haplotypes(session, metadata, contents):
     session.execute(t.insert(), list(gen_hap_vals(cols, contents)))
     session.commit()
 
-def insert_phased_data_haplotype_alleles(session, metadata, contents):
-    t = metadata.tables['phased_data_haplotype_alleles']
+def insert_haplotype_alleles(session, metadata, contents):
+    t = metadata.tables['haplotype_alleles']
     cols = _get_cols(t)
     session.execute(t.insert(), list(gen_hap_vals(cols, contents)))
     session.commit()

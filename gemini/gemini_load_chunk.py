@@ -968,11 +968,11 @@ class GeminiLoader(object):
                     database.insert_haplotypes(self.c, self.metadata, haps)
                     haps = []
 
-                    database.insert_phased_data_haplotype_alleles(self.c, self.metadata, alleles)
+                    database.insert_haplotype_alleles(self.c, self.metadata, alleles)
                     alleles = []
 
         database.insert_haplotypes(self.c, self.metadata, haps)
-        database.insert_phased_data_haplotype_alleles(self.c, self.metadata, alleles)
+        database.insert_haplotype_alleles(self.c, self.metadata, alleles)
         
 def load(parser, args):
     if (args.db is None or args.vcf is None):

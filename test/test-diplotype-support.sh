@@ -36,7 +36,7 @@ check obs exp
 rm obs exp
 
 ###########################################################################
-# 3. Test a query of the phased_data_haplotype_alleles table and join
+# 3. Test a query of the haplotype_alleles table and join
 # the haplotypes table 
 ###########################################################################
 echo "    load.t3...\c"
@@ -45,7 +45,7 @@ CACNA1S	chr1	201060814	201060815	g.201060815C>T	rs1800559	snp
 CACNA1S	chr1	201091992	201091993	g.201091993G>A	rs772226819	snp" > exp
 
 gemini query --header -q "select h.gene, a.chrom, a.start, a.end, \
-a.chrom_hgvs_name, a.rsid, a.type from haplotypes h inner join phased_data_haplotype_alleles a \
+a.chrom_hgvs_name, a.rsid, a.type from haplotypes h inner join haplotype_alleles a \
 on h.uid = a.hap_id where h.uid = 1" non-variants-included-snippet.db > obs
 check obs exp
 rm obs exp
