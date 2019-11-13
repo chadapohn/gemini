@@ -15,7 +15,8 @@ gemini load -v non-variants-included-snippet.vcf.gz \
 echo "    load.t1...\c"
 echo "chr1	96078437	96078438	A	
 chr1	96078438	96078439	T	C
-chr10	94775505	94775506	C	" > exp
+chr7	99652769	99652770	T	
+chr10	94775506	94775507	G	" > exp
 
 gemini query -q "select chrom, start, end, ref, alt from variants" non-variants-included-snippet.db > obs
 check obs exp
@@ -29,7 +30,8 @@ echo "gene	name	num_variants
 CACNA1S	Reference	2
 CACNA1S	c.520C>T	2
 CACNA1S	c.3257	2
-CYP2C19	*2	1" > exp
+CYP2C19	*2	1
+CYP3A5	*7	1" > exp
 
 gemini query --header -q "select gene, name, num_variants from haplotypes" non-variants-included-snippet.db > obs
 check obs exp
