@@ -14,7 +14,10 @@ iupac = {
     "H": ["A","C","T"],
     "V": ["A","C","G"],
     "N": ["A","T","C","G"],
+    "-": ["del"],
 }
 
 def lookup(allele):
-    return iupac[allele]
+    if allele.type == "ins" or allele.type == "del":
+        return allele.allele
+    return iupac[allele.allele]
