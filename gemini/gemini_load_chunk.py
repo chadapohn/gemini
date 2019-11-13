@@ -942,27 +942,31 @@ class GeminiLoader(object):
                 if hap_list not in seen:
                     haps.append(hap_list)
 
-                print(hap.name, hap.gene)
-
                 num_variants = int(hap.num_variants)
-                for pos in range(0, num_variants):
+                for pos in range(0, num_variants): # variant level
+                    iupac_pattern = None
                     sub_col = [hap.chrom, hap.starts.split(',')[pos], hap.ends.split(',')[pos],
                                 hap.chrom_hgvs_names.split(',')[pos], 
                                 hap.rsids.split(',')[pos], hap.alleles.split(',')[pos], 
-                                "[" + ''.join(iupac.lookup(hap.alleles.split(',')[pos])) + "]", hap.types.split(',')[pos]] 
-
+                                iupac_pattern, hap.types.split(',')[pos]] 
                     allele = haplotype_table.haplotype_allele(sub_col)
+                    allele._iupac_pattern = "[" + ''.join(iupac.lookup(allele)) + "]"
+            
+                    ## insert alleles into haplotype alleles table
                     var_id = 0
                     allele_id += 1
                     allele_list = [str(allele_id), str(hap_id), str(var_id), allele.chrom, allele.start, allele.end, 
                                     allele.chrom_hgvs_name, allele.rsid, allele.allele, allele._iupac_pattern, allele.type]
                     alleles.append(allele_list)
 
-                    # match each star alleles with patient genotypes
-                    scores, var_id = haplotypes.match(allele)
-                    
-                    print(hap.chrom, allele.start, scores, var_id)
-                 
+                    match_left, match_right = haplotypes.match(allele)
+                   
+                     
+                           
+                        
+                            
+
+
                     
                 if len(haps) % 1000 == 0:
                     database.insert_haplotypes(self.c, self.metadata, haps)
