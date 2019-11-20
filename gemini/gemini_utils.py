@@ -34,6 +34,14 @@ def get_gt_cols(metadata):
         # if there's no variants table, there are no gt_cols.
         return []
 
+def get_match_cols(metadata):
+    try:
+        return [c.name for c in metadata.tables["haplotype_alleles"].columns if
+                c.name.startswith("match") and
+                c.type.__class__.__name__.upper() == "BLOB"]
+    except KeyError:
+        return []
+
 def map_indices_to_samples(metadata):
     """Return a dict mapping samples indices in the
        numpy arrays (key) to sample names.

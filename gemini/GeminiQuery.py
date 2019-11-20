@@ -442,6 +442,10 @@ class GeminiRow(object):
             if 'info' not in self.cache:
                 self.cache['info'] = compression.unpack_ordereddict_blob(self.row['info'])
             return self.cache['info']
+        if key in self.query.match_cols:
+            if key not in self.cache:
+                self.cache[key] = self.unpack(self.row[key])
+            return self.cache[key]
         if key not in self.query.gt_cols:
             return self.row[key]
         elif key in self.query.gt_cols:
@@ -549,6 +553,8 @@ class GeminiQuery(object):
 
         # save the gt_cols in the database and don't hard-code them anywhere.
         self.gt_cols = util.get_gt_cols(self.metadata)
+
+        self.match_cols = util.get_match_cols(self.metadata)
 
         # extract the column names from the sample table.
         # needed for gt-filter wildcard support.
