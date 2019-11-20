@@ -9,8 +9,7 @@ check()
 ###########################################################################
 #1. Test loading no called genotypes 
 ###########################################################################
-gemini load -v non-variants-included-snippet.vcf.gz \
---skip-gene-tables --skip-gerp-bp --skip-cadd non-variants-included-snippet.db
+gemini load -v non-variants-included-snippet.vcf.gz --skip-gene-tables --skip-gerp-bp --skip-cadd non-variants-included-snippet.db
 
 echo "    load.t1...\c"
 echo "chr1	96078437	96078438	A	
@@ -48,6 +47,21 @@ CACNA1S	chr1	201091992	201091993	g.201091993G>A	rs772226819	snp" > exp
 
 gemini query --header -q "select h.gene, a.chrom, a.start, a.end, \
 a.chrom_hgvs_name, a.rsid, a.type from haplotypes h inner join haplotype_alleles a \
+on h.uid = a.hap_id where h.uid = 1" non-variants-included-snippet.db > obs
+check obs exp
+rm obs exp
+
+###########################################################################
+# 4. Test a query of the haplotype_alleles table with match_left and 
+# match_right columns 
+###########################################################################
+echo "    load.t4...\c"
+echo "gene	name	var_id	chrom_hgvs_name	allele	type	match_left	match_right
+CACNA1S	Reference	chr1_201060814	g.201060815C>T	C	snp	-1	-1
+CACNA1S	Reference	chr1_201091992	g.201091993G>A	G	snp	-1	-1" > exp
+
+gemini query --header -q "select h.gene, h.name, a.var_id, a.chrom_hgvs_name, \
+a.allele, a.type, a.match_left, a.match_right from haplotypes h inner join haplotype_alleles a \
 on h.uid = a.hap_id where h.uid = 1" non-variants-included-snippet.db > obs
 check obs exp
 rm obs exp
