@@ -1,5 +1,6 @@
 import pysam
 import re
+import numpy as np
 from . import annotations
 
 tabix_vcf = None
@@ -12,10 +13,12 @@ def load_tabix_vcf(args):
         tabix_vcf = pysam.Tabixfile(vcf)
 
 def match(allele):
-    match_left = []
-    match_right = []
+    # TODO: initialize match_left, match_right with -1 length equal to number of samples
     coords = get_vcf_coords(allele)
     hits = annotations._get_hits(coords, tabix_vcf, parser_type="vcf") # can be multile hit records i.e overlap positions
+    
+    match_left = np.full(1, -1)
+    match_right = np.full(1, -1)
     for hit in hits: # variant level
         # assume a single hit
         gts_left = []
@@ -46,14 +49,14 @@ def match(allele):
             gts_right.append(gt_right)
 
         allele_pattern = re.compile(allele._iupac_pattern)
-        for gt in gts_left:
+        for idx, gt in enumerate(gts_left):
             if allele_pattern.match(gt):
-                match_left.append(1)
-            else: match_left.append(0)
-        for gt in gts_right:
+                match_left[idx] = 1
+            else: match_left[idx] = 0
+        for idx, gt in enumerate(gts_right):
             if allele_pattern.match(gt):
-                match_right.append(1)
-            else: match_right.append(0)
+                match_right[idx] = 1
+            else: match_right[idx] = 0
 
     return match_left, match_right
 

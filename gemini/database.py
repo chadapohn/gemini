@@ -388,7 +388,7 @@ def create_tables(path, effect_fields=None, pls=True):
     haplotype_alleles="""
     uid integer,
     hap_id integer,
-    matched_var_id integer,
+    var_id varchar(60),
     chrom varchar(15),
     start integer,
     end integer,
@@ -397,6 +397,8 @@ def create_tables(path, effect_fields=None, pls=True):
     allele text,
     _iupac_pattern text,
     type varchar(15),
+    match_left blob,
+    match_right blob,
     """)
 
     # in the future this will be replaced by reading from the conf file.
@@ -571,10 +573,14 @@ def insert_haplotypes(session, metadata, contents):
     session.commit()
 
 def insert_haplotype_alleles(session, metadata, contents):
-    t = metadata.tables['haplotype_alleles']
-    cols = _get_cols(t)
-    session.execute(t.insert(), list(gen_hap_vals(cols, contents)))
+    tbl = metadata.tables['haplotype_alleles']
+    session.execute(tbl.insert(), contents)
     session.commit()
+
+    # t = metadata.tables['haplotype_alleles']
+    # cols = _get_cols(t)
+    # session.execute(t.insert(), list(gen_hap_vals(cols, contents)))
+    # session.commit()
 
 def insert_resources(session, metadata, resources):
     """Populate table of annotation resources used in this database.

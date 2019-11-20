@@ -952,22 +952,14 @@ class GeminiLoader(object):
                     allele = haplotype_table.haplotype_allele(sub_col)
                     allele._iupac_pattern = "[" + ''.join(iupac.lookup(allele)) + "]"
             
-                    ## insert alleles into haplotype alleles table
-                    var_id = 0
-                    allele_id += 1
-                    allele_list = [str(allele_id), str(hap_id), str(var_id), allele.chrom, allele.start, allele.end, 
-                                    allele.chrom_hgvs_name, allele.rsid, allele.allele, allele._iupac_pattern, allele.type]
-                    alleles.append(allele_list)
-
+                    var_id = allele.chrom + "_" + allele.start 
                     match_left, match_right = haplotypes.match(allele)
-                   
-                     
-                           
-                        
-                            
+                    allele_record = dict(hap_id=str(hap_id), var_id=str(var_id), chrom=allele.chrom,
+                                    start=allele.start, end=allele.end, chrom_hgvs_name=allele.chrom_hgvs_name, rsid=allele.rsid,
+                                    allele=allele.allele, _iupac_pattern=allele._iupac_pattern, type=allele.type, 
+                                    match_left=pack_blob(match_left), match_right=pack_blob(match_right),)
+                    alleles.append(allele_record)
 
-
-                    
                 if len(haps) % 1000 == 0:
                     database.insert_haplotypes(self.c, self.metadata, haps)
                     haps = []
